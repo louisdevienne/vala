@@ -120,6 +120,7 @@ subdir('libvaladoc')
 subdir('valadoc')
 subdir('vapi')
 subdir('doc')
+subdir('tests')
 
 install_data('vala.m4', install_dir: join_paths('share', 'aclocal'))
 
