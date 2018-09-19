@@ -209,6 +209,7 @@ AC_CONFIG_FILES([Makefile
            compiler/Makefile
            vapi/Makefile
            tests/Makefile
+           tests/dbusgen/Makefile
            tests/girwriter/Makefile
            tests/gtktemplate/Makefile
            doc/Makefile

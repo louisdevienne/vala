@@ -1,6 +1,7 @@
 NULL =
 
 SUBDIRS = \
+	dbusgen \
 	girwriter \
 	gtktemplate \
 	$(NULL)
