@@ -306,7 +306,6 @@ public class Vala.DBusParser : CodeVisitor {
 			name = vala_name;
 		}
 		current_node = current_method = new Method (name, dbus_module.void_type.copy (), get_current_src ());
-		current_iface.add_method ((Method)current_method);
 		((Method)current_method).is_abstract = true;
 		((Method)current_method).access = SymbolAccessibility.PUBLIC;
 		((Method)current_method).add_error_type (dbus_module.gio_error_type);
@@ -315,6 +314,8 @@ public class Vala.DBusParser : CodeVisitor {
 		next ();
 
 		parse_method_body ();
+
+		current_iface.add_method ((Method) current_method);
 
 		end_element ("method");
 	}
@@ -355,6 +356,8 @@ public class Vala.DBusParser : CodeVisitor {
 			return;
 		}
 
+		string? access = reader.get_attribute ("access");
+
 		var needs_signature = false;
 		var data_type = dbus_module.get_dbus_type (type);
 		if (data_type == null) {
@@ -362,25 +365,13 @@ public class Vala.DBusParser : CodeVisitor {
 			needs_signature = true;
 		}
 
-		PropertyAccessor get_access = null;
-		PropertyAccessor set_access = null;
-
-		string? access = reader.get_attribute ("access");
-		if (access == "read" || access == "readwrite") {
-			get_access = new PropertyAccessor (true, false, false, data_type, null, get_current_src ());
-		}
-		if (access == "write" || access == "readwrite") {
-			set_access = new PropertyAccessor (false, true, false, data_type, null, get_current_src ());
-		}
-
 		var vala_name = Vala.Symbol.camel_case_to_lower_case (name);
 		if (name == Vala.Symbol.lower_case_to_camel_case (vala_name)) {
 			name = vala_name;
 		}
-		current_node = current_property = new Property (name, data_type, get_access, set_access, get_current_src ());
+		current_node = current_property = new Property (name, data_type, null, null, get_current_src ());
 		current_property.is_abstract = true;
 		current_property.access = SymbolAccessibility.PUBLIC;
-		current_iface.add_property (current_property);
 
 		next ();
 
@@ -392,9 +383,20 @@ public class Vala.DBusParser : CodeVisitor {
 			}
 		}
 
+		if (access == "read" || access == "readwrite") {
+			current_property.get_accessor = new PropertyAccessor (true, false, false, current_property.property_type.copy (), null, get_current_src ());
+		}
+		if (access == "write" || access == "readwrite") {
+			var set_type = current_property.property_type.copy ();
+			set_type.value_owned = false;
+			current_property.set_accessor = new PropertyAccessor (false, true, false, set_type, null, get_current_src ());
+		}
+
 		if (needs_signature || !current_property.property_type.equals (data_type)) {
 			current_node.set_attribute_string ("DBus", "signature", type);
 		}
+
+		current_iface.add_property (current_property);
 
 		end_element ("property");
 	}
@@ -413,6 +415,8 @@ public class Vala.DBusParser : CodeVisitor {
 			return;
 		}
 
+		string? direction = reader.get_attribute ("direction");
+
 		var needs_signature = false;
 		var data_type = dbus_module.get_dbus_type (type);
 		if (data_type == null) {
@@ -422,15 +426,6 @@ public class Vala.DBusParser : CodeVisitor {
 		data_type.value_owned = false;
 
 		current_node = current_param = new Parameter (name, data_type, get_current_src ());
-		current_method.add_parameter (current_param);
-
-		if (current_method is Method) {
-			string? direction = reader.get_attribute ("direction");
-			if (direction == "out") {
-				current_param.direction = ParameterDirection.OUT;
-				data_type.value_owned = true;
-			}
-		}
 
 		next ();
 
@@ -447,6 +442,15 @@ public class Vala.DBusParser : CodeVisitor {
 		if (needs_signature || !current_param.variable_type.equals (data_type)) {
 			current_node.set_attribute_string ("DBus", "signature", type);
 		}
+
+		if (current_method is Method) {
+			if (direction == "out") {
+				current_param.direction = ParameterDirection.OUT;
+				current_param.variable_type.value_owned = true;
+			}
+		}
+
+		current_method.add_parameter (current_param);
 
 		end_element ("arg");
 	}
@@ -512,12 +516,13 @@ public class Vala.DBusParser : CodeVisitor {
 			name = vala_name;
 		}
 		current_node = current_method = new Signal (name, dbus_module.void_type.copy ());
-		current_iface.add_signal ((Signal)current_node);
 		((Signal)current_node).access = SymbolAccessibility.PUBLIC;
 
 		next ();
 
 		parse_method_body ();
+
+		current_iface.add_signal ((Signal) current_method);
 
 		end_element ("signal");
 	}
