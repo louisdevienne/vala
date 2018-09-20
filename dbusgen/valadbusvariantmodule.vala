@@ -183,6 +183,8 @@ public class Vala.DBusVariantModule {
 			return string_array_type.copy ();
 		} else if (type.equal (VariantType.OBJECT_PATH_ARRAY)) {
 			return string_array_type.copy ();
+		} else if (type.equal (VariantType.TUPLE)) {
+			
 		}
 
 		Report.warning (null, "Unresolved type: %s".printf ((string) type.peek_string ()));
