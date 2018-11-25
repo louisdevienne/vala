@@ -107,14 +107,7 @@ public class Vala.DBusGen {
 
 		context.profile = Profile.GOBJECT;
 		context.add_define ("GOBJECT");
-		context.target_glib_major = 2;
-		context.target_glib_minor = 40;
 		context.vapi_comments = true;
-
-
-		for (int i = 16; i <= 40; i += 2) {
-			context.add_define ("GLIB_2_%d".printf (i));
-		}
 
 		context.add_external_package ("glib-2.0");
 		context.add_external_package ("gobject-2.0");
